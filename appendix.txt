@@ -1,0 +1,13 @@
+Make a BiniomialTree class
+Make a StockTree class
+Make an OptionsTree class ?
+Make an OptionsPricer class ?
+
+class BinomialTree:
+    - display
+    - 
+
+
+Optimizations:
+- numpy arrays instead of lists for values of trees
+- should we round the numbers to not get a floating number too long ?
