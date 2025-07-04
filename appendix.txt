@@ -1,13 +1,18 @@
-Make a BiniomialTree class
-Make a StockTree class
-Make an OptionsTree class ?
-Make an OptionsPricer class ?
+Testing:
 
-class BinomialTree:
-    - display
-    - 
+    BiniomialTree:
+        - Test the display works for many depths and values of many digits
+    
+    StockTree:
+        - yeah just test stuff cuh
 
 
 Optimizations:
-- numpy arrays instead of lists for values of trees
-- should we round the numbers to not get a floating number too long ?
+    - assertions for the arbitrage conditions (in american options also)
+
+Conventions:
+    - How to label the node height and depth....
+
+
+Questions:
+    - Can depth be 0 ? What's the relationship between depth and N

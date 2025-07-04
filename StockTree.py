@@ -5,7 +5,7 @@ class StockTree(BinomialTree):
 
     def __init__(self, depth: int, S0: float, up_factor: float, down_factor: float):
 
-        assert depth >= 0 and depth <= 1000, 'depth out of range'
+        assert depth >= 1 and depth <= 1000, 'depth out of range'
         assert S0 > 0, "Initial stock price must be greater than 0"
         assert up_factor > 1, "Up factor must be bigger than 1"
         assert down_factor < 1, "Down factor must be less than 1"

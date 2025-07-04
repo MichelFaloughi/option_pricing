@@ -5,7 +5,7 @@ class BinomialTree:
     
     def __init__(self, depth: int, values: Optional[np.ndarray] = None):
 
-        assert depth >= 0 and depth <= 1000, 'depth out of range'
+        assert depth >= 1 and depth <= 1000, 'depth out of range'
         
         self.depth = depth
         self.values = values
