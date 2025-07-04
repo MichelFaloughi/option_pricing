@@ -9,6 +9,9 @@ Testing:
 
 Optimizations:
     - assertions for the arbitrage conditions (in american options also)
+    - add other payoff functions like sqrt, square, or whatever
+
+
 
 Conventions:
     - How to label the node height and depth....
@@ -16,3 +19,4 @@ Conventions:
 
 Questions:
     - Can depth be 0 ? What's the relationship between depth and N
+    - type is a keyword in python, should I use Type instead?

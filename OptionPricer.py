@@ -4,6 +4,7 @@ import numpy as np
 from Option import Option
 from StockTree import StockTree
 from BinomialTree import BinomialTree
+from BarrierOption import BarrierOption
 
 class OptionPricer:
 
@@ -36,34 +37,29 @@ class OptionPricer:
         assert len(option_tree.values) == len(self.stock_tree.values), "dimensions don't match"
         assert len(option_tree.values[-1]) == len(self.stock_tree.values[-1]), "dimensions don't match"
 
-        if self.option.style == "European":
-            
-            vectorized_payoff = np.vectorize(self.option.payoff)
+        if not isinstance(self.option, BarrierOption):
+
+            vectorized_payoff = np.vectorize(self.option.payoff) # for use below
             option_tree.values[-1] = vectorized_payoff(self.stock_tree.values[-1]) # fill last level with payoffs
 
             # then backtrack using formula  V_n^(k,h) = e^(-rΔt) [ q V_(n+1)^(k+1) + (1-q) V_(n+1)^k ] 
             for depth in range(len(option_tree.values) - 1)[::-1]:     # loop backwards from second-to-last level
                 for height in range(len(option_tree.values[depth])):   # loop through nodes of that level
 
-                    option_tree.values[depth][height] = np.exp(-self.r * self.delta_T) * ( self.q * option_tree.values[depth + 1][height + 1] + (1 - self.q) * option_tree.values[depth + 1][height] )
+                    hold_value = np.exp(-self.r * self.delta_T) * ( self.q * option_tree.values[depth + 1][height + 1] + (1 - self.q) * option_tree.values[depth + 1][height] )
 
-        
-        elif self.option.style == "American":
-
-            vectorized_payoff = np.vectorize(self.option.payoff)
-            option_tree.values[-1] = vectorized_payoff(self.stock_tree.values[-1]) # fill last level with payoffs
-
-            # then backtrack using formula  V_n^(k,h) = e^(-rΔt) [ q V_(n+1)^(k+1) + (1-q) V_(n+1)^k ] 
-            for depth in range(len(option_tree.values) - 1)[::-1]:     # loop backwards from second-to-last level
-                for height in range(len(option_tree.values[depth])):   # loop through nodes of that level
+                    if self.option.style == "European":
+                        option_tree.values[depth][height] = hold_value
                     
-                    hold_value = np.exp(-self.r * self.delta_T) * ( self.q * option_tree.values[depth + 1][height + 1] + (1 - self.q) * option_tree.values[depth + 1][height] ) 
-                    exercise_value = self.option.payoff(self.stock_tree.values[depth][height])
-                    option_tree.values[depth][height] = max(hold_value, exercise_value)
-                    
+                    else: # American
+                        exercise_value = self.option.payoff(self.stock_tree.values[depth][height])
+                        option_tree.values[depth][height] = max(hold_value, exercise_value)
+
+        else: # if it's a barrier option
+
+            raise NotImplementedError("rou2 chway") 
         
-        else:
-            raise ValueError("Unsupported option type or style")
+        
 
         return option_tree
     

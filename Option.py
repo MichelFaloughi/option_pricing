@@ -6,7 +6,8 @@ class Option:
                         T: int,     # maturity
                         style: str, # American or European
                         type: str,  # Call or Put
-                 ):
+                    ):
+        
         self.K = K
         self.T = T
         self.style = style
