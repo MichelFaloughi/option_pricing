@@ -1,4 +1,3 @@
-# for now forget barrier options
 # for now forget custom payoffs, but this is a member of the Option class
 import numpy as np
 from Option import Option
@@ -29,17 +28,24 @@ class OptionPricer:
 
         self.stock_tree = StockTree(N + 1, S0, self.up_factor, self.down_factor)
 
-
+        # assertions
+        if isinstance(option, BarrierOption):
+            assert option.barrier >= 0, "Barrier must be a non-negative float"
+            if option.direction == 'up':
+                assert option.barrier > S0, "Barrier must be above the initial stock price for an up barrier"
+            else: # down
+                assert option.barrier < S0, "Barrier must be below the initial stock price for a down barrier"
+            
 
     def build_option_tree(self) -> BinomialTree:
         option_tree = BinomialTree(self.N + 1) # build skeleton tree (with default values)
+        vectorized_payoff = np.vectorize(self.option.payoff) # for use below
 
         assert len(option_tree.values) == len(self.stock_tree.values), "dimensions don't match"
         assert len(option_tree.values[-1]) == len(self.stock_tree.values[-1]), "dimensions don't match"
 
         if not isinstance(self.option, BarrierOption):
 
-            vectorized_payoff = np.vectorize(self.option.payoff) # for use below
             option_tree.values[-1] = vectorized_payoff(self.stock_tree.values[-1]) # fill last level with payoffs
 
             # then backtrack using formula  V_n^(k,h) = e^(-rΔt) [ q V_(n+1)^(k+1) + (1-q) V_(n+1)^k ] 
@@ -55,14 +61,56 @@ class OptionPricer:
                         exercise_value = self.option.payoff(self.stock_tree.values[depth][height])
                         option_tree.values[depth][height] = max(hold_value, exercise_value)
 
-        else: # if it's a barrier option
+        else: # it's a barrier option
 
-            raise NotImplementedError("rou2 chway") 
-        
-        
+            if self.option.knock_type == 'out':
+
+                option_tree.values[-1] = vectorized_payoff(self.stock_tree.values[-1]) # fill last level with payoffs
+
+                
+                # add the zeros above or below the barrier accordingly if it's up or down
+                # You have to use the indices of the nodes to make this work
+                
+                if self.option.direction == 'up':
+
+                    return None
+
+                    
+                else: # down
+
+                    return None
+                
+
+
+            else: # knock-in
+
+
+                return None
+            
 
         return option_tree
     
 
+    def find_coords(self) -> list:
+        """ For now this is for knock-out barrier options """
+        assert isinstance(self.option, BarrierOption), 'huh'
+        assert self.option.knock_type == 'out', 'huh'
+        
+        coords = []
 
+        if self.option.direction == 'up':
+            for depth in range(len(self.stock_tree.values)):     # loop backwards from second-to-last level
+                for height in range(len(self.stock_tree.values[depth])):
+
+                    if self.stock_tree.values[depth][height] >= self.option.barrier:
+                        coords.append( (depth, height) )
+
+        else: # 'down'
+            for depth in range(len(self.stock_tree.values)):     # loop backwards from second-to-last level
+                for height in range(len(self.stock_tree.values[depth])):
+
+                    if self.stock_tree.values[depth][height] <= self.option.barrier:
+                        coords.append( (depth, height) )
+
+        return coords
 

@@ -17,5 +17,5 @@ class BarrierOption(Option):
         self.knock_type = knock_type  # 'knock-in' or 'knock-out'
 
         assert direction in ['up', 'down'], "Direction must be either 'up' or 'down'"
-        assert knock_type in ['knock-in', 'knock-out'], "Knock type must be either 'knock-in' or 'knock-out'"
+        assert knock_type in ['in', 'out'], "Knock type must be either 'knock-in' or 'knock-out'"
         assert barrier >= 0, "Barrier must be a non-negative float"

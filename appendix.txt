@@ -20,3 +20,17 @@ Conventions:
 Questions:
     - Can depth be 0 ? What's the relationship between depth and N
     - type is a keyword in python, should I use Type instead?
+
+
+
+
+
+                    k
+                g
+            d       l
+        b       h
+    a       e       m
+        c       i   
+            f       n
+                j
+                    o
