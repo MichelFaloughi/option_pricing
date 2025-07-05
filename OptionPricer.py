@@ -68,7 +68,7 @@ class OptionPricer:
 
                 option_tree.values[-1] = vectorized_payoff(self.stock_tree.values[-1]) # fill last level with payoffs
                 
-                coords_to_be_0 = self.find_coords_to_be_0() # then set the 0s where they have to be
+                coords_to_be_0 = self.find_coords_passt_barrier() # then set the 0s where they have to be
                 for depth, height in coords_to_be_0:        # this is kind of a double overkill because the default is 0, but might change later
                     option_tree.values[depth][height] = 0
                 
@@ -97,6 +97,9 @@ class OptionPricer:
                 after_tree = BinomialTree(self.N + 1) # build skeleton tree (with default values)
                 after_tree.values[-1] = vectorized_payoff(self.stock_tree.values[-1]) # fill last level with payoffs
 
+                # DEBUG
+                print(after_tree.values[-1])
+
                 # then backtrack using formula  V_n^(k,h) = e^(-rΔt) [ q V_(n+1)^(k+1) + (1-q) V_(n+1)^k ] 
                 for depth in range(len(option_tree.values) - 1)[::-1]:     # loop backwards from second-to-last level
                     for height in range(len(option_tree.values[depth])):   # loop through nodes of that level
@@ -109,22 +112,45 @@ class OptionPricer:
                         else: # American
                             exercise_value = self.option.payoff(self.stock_tree.values[depth][height])
                             option_tree.values[depth][height] = max(hold_value, exercise_value)
-
+                # DEBUG
+                self.after_tree = after_tree
 
 
                 # BEFORE TREE
-                # last level zeros
+                option_tree.values[-1] = vectorized_payoff(self.stock_tree.values[-1]) # set last level to zeros
+                
                 # get_coords then fill with whatever coresponds in the after tree
+                coords_to_be_like_after_tree = self.find_coords_passt_barrier()
+                for depth, height in coords_to_be_like_after_tree:        # this is kind of a double overkill because the default is 0, but might change later
+                    option_tree.values[depth][height] = after_tree.values[depth][height]
+
                 # backtrack
+                # SEMI REPETITION
+                # then backtrack using formula  V_n^(k,h) = e^(-rΔt) [ q V_(n+1)^(k+1) + (1-q) V_(n+1)^k ] 
+                for depth in range(len(option_tree.values) - 1)[::-1]:     # loop backwards from second-to-last level
+                    for height in range(len(option_tree.values[depth])):   # loop through nodes of that level
+                        
+                        if (depth, height) in coords_to_be_like_after_tree:
+                            option_tree.values[depth][height] = after_tree.values[depth][height] # explicit, overkill, but it's okay for now
+                        
+                        else:  
+                            hold_value = np.exp(-self.r * self.delta_T) * ( self.q * option_tree.values[depth + 1][height + 1] + (1 - self.q) * option_tree.values[depth + 1][height] )
+
+                            if self.option.style == "European":
+                                option_tree.values[depth][height] = hold_value
+                            
+                            else: # American
+                                exercise_value = self.option.payoff(self.stock_tree.values[depth][height])
+                                option_tree.values[depth][height] = max(hold_value, exercise_value)
             
 
         return option_tree
     
 
-    def find_coords_to_be_0(self) -> list: # list of (depth, height)
-        """ FOR NOW THIS IS ONLY FOR KNOCK-OUT BARRIER OPTIONS """
-        assert isinstance(self.option, BarrierOption), 'huh'
-        assert self.option.knock_type == 'out', 'huh'
+    def find_coords_passt_barrier(self) -> list: # list of (depth, height)
+        """ what da func name says. Sometimes these need to be set to 0 (knock-out case),
+         sometimes they need to be set to their value in the after tree (knock-in case) """
+        assert isinstance(self.option, BarrierOption), 'why would you need this ?'
         
         coords = []
 
