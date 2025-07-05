@@ -61,56 +61,86 @@ class OptionPricer:
                         exercise_value = self.option.payoff(self.stock_tree.values[depth][height])
                         option_tree.values[depth][height] = max(hold_value, exercise_value)
 
+        
         else: # it's a barrier option
 
             if self.option.knock_type == 'out':
 
                 option_tree.values[-1] = vectorized_payoff(self.stock_tree.values[-1]) # fill last level with payoffs
-
                 
-                # add the zeros above or below the barrier accordingly if it's up or down
-                # You have to use the indices of the nodes to make this work
+                coords_to_be_0 = self.find_coords_to_be_0() # then set the 0s where they have to be
+                for depth, height in coords_to_be_0:        # this is kind of a double overkill because the default is 0, but might change later
+                    option_tree.values[depth][height] = 0
                 
-                if self.option.direction == 'up':
+                # now backtrack from second to last level, make sure if coords are in coords_to_be_0 then the val stays 0
+                # SEMI REPETITION
+                # then backtrack using formula  V_n^(k,h) = e^(-rΔt) [ q V_(n+1)^(k+1) + (1-q) V_(n+1)^k ] 
+                for depth in range(len(option_tree.values) - 1)[::-1]:     # loop backwards from second-to-last level
+                    for height in range(len(option_tree.values[depth])):   # loop through nodes of that level
+                        
+                        if (depth, height) in coords_to_be_0:
+                            option_tree.values[depth][height] = 0 # explicit, overkill, but it's okay for now
+                        
+                        else:  
+                            hold_value = np.exp(-self.r * self.delta_T) * ( self.q * option_tree.values[depth + 1][height + 1] + (1 - self.q) * option_tree.values[depth + 1][height] )
 
-                    return None
-
-                    
-                else: # down
-
-                    return None
-                
-
+                            if self.option.style == "European":
+                                option_tree.values[depth][height] = hold_value
+                            
+                            else: # American
+                                exercise_value = self.option.payoff(self.stock_tree.values[depth][height])
+                                option_tree.values[depth][height] = max(hold_value, exercise_value)
 
             else: # knock-in
 
+                # AFTER TREE
+                after_tree = BinomialTree(self.N + 1) # build skeleton tree (with default values)
+                after_tree.values[-1] = vectorized_payoff(self.stock_tree.values[-1]) # fill last level with payoffs
 
-                return None
+                # then backtrack using formula  V_n^(k,h) = e^(-rΔt) [ q V_(n+1)^(k+1) + (1-q) V_(n+1)^k ] 
+                for depth in range(len(option_tree.values) - 1)[::-1]:     # loop backwards from second-to-last level
+                    for height in range(len(option_tree.values[depth])):   # loop through nodes of that level
+
+                        hold_value = np.exp(-self.r * self.delta_T) * ( self.q * option_tree.values[depth + 1][height + 1] + (1 - self.q) * option_tree.values[depth + 1][height] )
+
+                        if self.option.style == "European":
+                            option_tree.values[depth][height] = hold_value
+                        
+                        else: # American
+                            exercise_value = self.option.payoff(self.stock_tree.values[depth][height])
+                            option_tree.values[depth][height] = max(hold_value, exercise_value)
+
+
+
+                # BEFORE TREE
+                # last level zeros
+                # get_coords then fill with whatever coresponds in the after tree
+                # backtrack
             
 
         return option_tree
     
 
-    def find_coords(self) -> list:
-        """ For now this is for knock-out barrier options """
+    def find_coords_to_be_0(self) -> list: # list of (depth, height)
+        """ FOR NOW THIS IS ONLY FOR KNOCK-OUT BARRIER OPTIONS """
         assert isinstance(self.option, BarrierOption), 'huh'
         assert self.option.knock_type == 'out', 'huh'
         
         coords = []
 
         if self.option.direction == 'up':
-            for depth in range(len(self.stock_tree.values)):     # loop backwards from second-to-last level
+            for depth in range(len(self.stock_tree.values)):     
                 for height in range(len(self.stock_tree.values[depth])):
 
                     if self.stock_tree.values[depth][height] >= self.option.barrier:
                         coords.append( (depth, height) )
 
         else: # 'down'
-            for depth in range(len(self.stock_tree.values)):     # loop backwards from second-to-last level
+            for depth in range(len(self.stock_tree.values)):     
                 for height in range(len(self.stock_tree.values[depth])):
 
-                    if self.stock_tree.values[depth][height] <= self.option.barrier:
+                    if self.stock_tree.values[depth][height] <= self.option.barrier: # condition changed
                         coords.append( (depth, height) )
 
-        return coords
+        return coords # depth, height
 

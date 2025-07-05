@@ -1,3 +1,7 @@
+To do:
+    - change build_option_tree in OptionPricer cause when it's a knock-in barrier option, there are two trees not one...
+    - see how we can encapsulate the backtrack logic, and the normal european and american pricing
+    
 Testing:
 
     BiniomialTree:
