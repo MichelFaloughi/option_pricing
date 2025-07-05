@@ -6,16 +6,17 @@ import numpy as np
 from BarrierOption import BarrierOption
 
 sigma = 0.2
+S0 = 100.0
+r = 0.05
+
 T = 1.0 # maturity
 N = 3 # number of steps
-r = 0.05
-K = 100 # strike price
-S0 = 100.0
+K = 110 # strike price
 B = 120 # barrier
 
-# option = Option( K, T, style = "American", type = "Put" )
-option = BarrierOption( K, T, style = "American", type = "Call",
-                       barrier=B, direction='up', knock_type='in')
+option = Option( K, T, style = "American", type = "Put" )
+# option = BarrierOption( K, T, style = "European", type = "Call",
+#                        barrier=B, direction='up', knock_type='in')
 
 option_pricer = OptionPricer(option, sigma, S0, r, N)
 
@@ -30,8 +31,8 @@ option_pricer.stock_tree.display_tree_on_terminal()
 
 print() # skip a line
 
-print('After Tree')
-option_pricer.after_tree.display_tree_on_terminal()
+# print('After Tree')
+# option_pricer.after_tree.display_tree_on_terminal()
 
 print()
 
