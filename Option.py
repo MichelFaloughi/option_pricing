@@ -1,4 +1,5 @@
 # This is probably useful for encapsulation at least
+# TODO: custom payoffs ?
 
 class Option:
 
@@ -23,8 +24,8 @@ class Option:
     
     def get_payoff_function(self):
         if self.type == 'Call':
-            return lambda S: max(0, S - self.K)
+            return lambda S: float( max(0, S - self.K) )
         elif self.type == 'Put':
-            return lambda S: max(0, self.K - S)
+            return lambda S: float( max(0, self.K - S) )
         else:
             raise ValueError("Type must be either 'Call' or 'Put'")

@@ -1,4 +1,3 @@
-# TODO: for now forget custom payoffs, but this is a member of the Option class
 import numpy as np
 from Option import Option
 from StockTree import StockTree
@@ -49,9 +48,10 @@ class OptionPricer:
     
     def _build_barrier_option_tree(self) -> BinomialTree:
         """ Barrier options builder sub-router """
+        assert isinstance(self.option, BarrierOption)
         if self.option.knock_type == 'out':
             return self._build_knock_out_tree()
-        else:  # knock-in
+        else:  # in
             return self._build_knock_in_tree()
 
     def _build_vanilla_option_tree(self) -> BinomialTree:
@@ -82,9 +82,10 @@ class OptionPricer:
         after_tree = self._build_vanilla_option_tree()  # After tree, straightforward
         before_tree = BinomialTree(self.N + 1)          # Before tree skeleton
         
-        self._set_terminal_payoffs(before_tree) # Set terminal payoffs
+        before_tree.values[-1] = np.zeros(len(before_tree.values[-1]), dtype=float) # force set last level to zeros
         
         # Set knocked-in nodes to their after-tree values
+        # TO DO: I should only do this for the last level, but oh-well not biggest problem now
         nodes_passt_barrier = self._find_coords_passt_barrier()
         for depth, height in nodes_passt_barrier:
             before_tree.values[depth][height] = after_tree.values[depth][height]
@@ -152,8 +153,8 @@ class OptionPricer:
     
     def _barrier_backtrack_tree(self, option_tree: BinomialTree, passt_barrier_coords:list, after_tree: BinomialTree = None):
         """ Same backtrack but check for special nodes passt the barrier, replace with 0 or corresponding value in after_tree """
-        for depth in range(len(option_tree.values) - 1)[::-1]:
-            for height in range(len(option_tree.values[depth])):
+        for depth in range(len(option_tree.values) - 1)[::-1]:      # loop backwards from second-to-last level
+            for height in range(len(option_tree.values[depth])):    # loop through nodes of that level
                 
                 if (depth, height) in passt_barrier_coords:
                     if after_tree is not None:
@@ -170,3 +171,5 @@ class OptionPricer:
                     else:  # American
                         exercise_value = self.option.payoff(self.stock_tree.values[depth][height])
                         option_tree.values[depth][height] = max(hold_value, exercise_value)
+
+

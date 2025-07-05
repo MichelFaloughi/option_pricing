@@ -9,12 +9,12 @@ sigma = 0.2
 S0 = 100.0
 r = 0.05
 
-T = 1.0 # maturity
-N = 3 # number of steps
-K = 110 # strike price
+T = 1   # maturity
+N = 3   # number of steps
+K = 100 # strike price
 B = 120 # barrier
 
-# option = Option( K, T, style = "American", type = "Put" )
+option = Option( K=110, T=1, style = "American", type = "Put" )
 option = BarrierOption( K, T, style = "European", type = "Call",
                         barrier=B, direction='up', knock_type='in')
 

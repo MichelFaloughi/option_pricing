@@ -22,7 +22,7 @@ class BinomialTree:
         return_array = np.empty(self.depth, dtype=object)
 
         for i in range(self.depth):
-            return_array[i] = np.zeros(i + 1)
+            return_array[i] = np.zeros(i + 1, dtype=float)
 
         assert len(return_array[-1]) == self.depth, 'error in making the default values'
         assert len(return_array[0]) == 1, 'huh'
