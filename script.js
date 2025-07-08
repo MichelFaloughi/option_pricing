@@ -237,7 +237,7 @@ function displayTree(tree, containerId) {
     // Layout parameters
     const nodeSize = 56; // px (node box height/width)
     const hGap = 90;     // horizontal gap between columns
-    const vGap = 65;     // vertical gap between rows (increased for clarity)
+    const vGap = 65;     // vertical gap between rows (user's preferred)
     const depth = tree.values.length;
     const maxNodes = tree.values[depth - 1].length;
     const svgWidth = (depth - 1) * hGap + nodeSize * 2;
@@ -252,8 +252,10 @@ function displayTree(tree, containerId) {
         // Center this column vertically
         const colTop = (svgHeight - (nodesInCol - 1) * vGap - nodeSize) / 2;
         for (let row = 0; row < nodesInCol; row++) {
+            // Flip the row index: highest price at top
+            const flippedRow = nodesInCol - 1 - row;
             const x = col * hGap + nodeSize;
-            const y = colTop + row * vGap;
+            const y = colTop + flippedRow * vGap;
             nodePositions[col][row] = { x, y };
         }
     }
@@ -264,12 +266,12 @@ function displayTree(tree, containerId) {
         for (let row = 0; row < tree.values[col].length; row++) {
             // Each node connects to two children: (col+1, row) and (col+1, row+1)
             const { x: x1, y: y1 } = nodePositions[col][row];
-            // Left child
+            // Left child (down move, which is now lower visually)
             if (row < nodePositions[col + 1].length) {
                 const { x: x2, y: y2 } = nodePositions[col + 1][row];
                 svgLines += `<line x1="${x1 + nodeSize / 2}" y1="${y1 + nodeSize / 2}" x2="${x2 + nodeSize / 2}" y2="${y2 + nodeSize / 2}" stroke="#b4b4b4" stroke-width="2" />`;
             }
-            // Right child
+            // Right child (up move, which is now higher visually)
             if (row + 1 < nodePositions[col + 1].length) {
                 const { x: x2, y: y2 } = nodePositions[col + 1][row + 1];
                 svgLines += `<line x1="${x1 + nodeSize / 2}" y1="${y1 + nodeSize / 2}" x2="${x2 + nodeSize / 2}" y2="${y2 + nodeSize / 2}" stroke="#b4b4b4" stroke-width="2" />`;
