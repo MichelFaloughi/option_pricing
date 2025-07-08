@@ -41,47 +41,6 @@ An interactive web application for pricing financial options using the binomial 
 5. Click "Calculate Option Price" to see results
 6. View the interactive binomial trees showing stock prices and option values
 
-## Deployment on GitHub Pages
-
-### Method 1: Direct Upload (Recommended)
-
-1. Create a new repository on GitHub
-2. Upload the following files to your repository:
-   - `index.html`
-   - `styles.css`
-   - `script.js`
-   - `README.md`
-3. Go to your repository Settings
-4. Scroll down to "GitHub Pages" section
-5. Under "Source", select "Deploy from a branch"
-6. Choose "main" branch and "/ (root)" folder
-7. Click "Save"
-8. Your app will be available at `https://yourusername.github.io/your-repo-name`
-
-### Method 2: Using GitHub Desktop
-
-1. Clone your repository to your local machine
-2. Add the web app files to the repository folder
-3. Commit and push the changes
-4. Follow steps 4-8 from Method 1
-
-### Method 3: Using Command Line
-
-```bash
-# Clone your repository
-git clone https://github.com/yourusername/your-repo-name.git
-cd your-repo-name
-
-# Add the web app files
-# (Copy index.html, styles.css, script.js, README.md to this folder)
-
-# Commit and push
-git add .
-git commit -m "Add option pricing calculator web app"
-git push origin main
-```
-
-Then follow steps 4-8 from Method 1.
 
 ## Technical Details
 
