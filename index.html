@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Option Pricing Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@11.8.0/lib/browser/math.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📈 Option Pricing Calculator</h1>
+            <p>Interactive binomial tree option pricing with real-time visualization</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Input Panel -->
+            <div class="input-panel">
+                <h2>Parameters</h2>
+                
+                <div class="parameter-group">
+                    <h3>Market Parameters</h3>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="sigma">Volatility (σ)</label>
+                            <input type="number" id="sigma" value="0.2" step="0.01" min="0.01" max="2">
+                        </div>
+                        <div class="input-group">
+                            <label for="S0">Initial Stock Price (S₀)</label>
+                            <input type="number" id="S0" value="100" step="1" min="1">
+                        </div>
+                        <div class="input-group">
+                            <label for="r">Risk-free Rate (r)</label>
+                            <input type="number" id="r" value="0.05" step="0.001" min="0" max="1">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="parameter-group">
+                    <h3>Option Parameters</h3>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="T">Time to Maturity (T)</label>
+                            <input type="number" id="T" value="1" step="0.1" min="0.1">
+                        </div>
+                        <div class="input-group">
+                            <label for="N">Number of Steps (N)</label>
+                            <input type="number" id="N" value="3" step="1" min="2" max="10">
+                        </div>
+                        <div class="input-group">
+                            <label for="K">Strike Price (K)</label>
+                            <input type="number" id="K" value="100" step="1" min="1">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="parameter-group">
+                    <h3>Option Type</h3>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="optionCategory">Option Category</label>
+                            <select id="optionCategory">
+                                <option value="vanilla">Vanilla Option</option>
+                                <option value="barrier">Barrier Option</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="optionType">Option Type</label>
+                            <select id="optionType">
+                                <option value="Call">Call</option>
+                                <option value="Put">Put</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="style">Style</label>
+                            <select id="style">
+                                <option value="European">European</option>
+                                <option value="American">American</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="parameter-group" id="barrierParams" style="display: none;">
+                    <h3>Barrier Parameters</h3>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="barrier">Barrier Level</label>
+                            <input type="number" id="barrier" value="120" step="1" min="1">
+                        </div>
+                        <div class="input-group">
+                            <label for="direction">Direction</label>
+                            <select id="direction">
+                                <option value="up">Up</option>
+                                <option value="down">Down</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="knockType">Knock Type</label>
+                            <select id="knockType">
+                                <option value="in">Knock-in</option>
+                                <option value="out">Knock-out</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="calculateBtn" class="calculate-btn">Calculate Option Price</button>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="results-panel">
+                <div class="result-card">
+                    <h3>Option Price</h3>
+                    <div class="price-display" id="optionPrice">-</div>
+                </div>
+
+                <div class="trees-container">
+                    <div class="tree-section">
+                        <h3>Stock Price Tree</h3>
+                        <div class="tree-display" id="stockTree"></div>
+                    </div>
+                    
+                    <div class="tree-section">
+                        <h3>Option Price Tree</h3>
+                        <div class="tree-display" id="optionTree"></div>
+                    </div>
+                    
+                    <div class="tree-section" id="afterTreeSection" style="display: none;">
+                        <h3>After Tree (Barrier Options)</h3>
+                        <div class="tree-display" id="afterTree"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
