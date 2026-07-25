@@ -4,6 +4,9 @@ class BinomialTree {
     constructor(depth, values = null) {
         this.depth = depth;
         this.values = values || this.getDefaultValues();
+        // Coordinates ("depth,height") where exercising beats holding. Only ever
+        // populated for American-style options.
+        this.exerciseNodes = new Set();
     }
 
     getDefaultValues() {
@@ -195,6 +198,9 @@ class OptionPricer {
                 } else {
                     const exercise_value = this.option.payoff(this.stock_tree.values[depth][height]);
                     option_tree.values[depth][height] = Math.max(hold_value, exercise_value);
+                    if (exercise_value > hold_value) {
+                        option_tree.exerciseNodes.add(`${depth},${height}`);
+                    }
                 }
             }
         }
@@ -219,6 +225,9 @@ class OptionPricer {
                     } else {
                         const exercise_value = this.option.payoff(this.stock_tree.values[depth][height]);
                         option_tree.values[depth][height] = Math.max(hold_value, exercise_value);
+                        if (exercise_value > hold_value) {
+                            option_tree.exerciseNodes.add(`${depth},${height}`);
+                        }
                     }
                 }
             }
@@ -227,78 +236,112 @@ class OptionPricer {
 }
 
 // UI Functions
-function displayTree(tree, containerId) {
+
+// Layout constants for the rendered trees (px).
+const NODE_SIZE = 52;
+const H_GAP = 88;
+const V_GAP = 62;
+
+/**
+ * Render a binomial tree as positioned nodes over an SVG edge layer.
+ *
+ * `ctx` optionally carries pricing context used to encode meaning onto the
+ * nodes:
+ *   moneyness    - tint nodes by stock price relative to the strike
+ *   K, barrier   - draw horizontal reference lines at those price levels
+ *   S0, upFactor - required for reference lines (sets the price/y mapping)
+ *   pastBarrier  - Set of "depth,height" keys that have crossed the barrier
+ *   exercise     - Set of "depth,height" keys where early exercise is optimal
+ */
+function displayTree(tree, containerId, ctx = {}) {
     const container = document.getElementById(containerId);
     if (!tree || !tree.values || tree.values.length === 0) {
-        container.innerHTML = '<div class="empty">No tree data available</div>';
+        container.innerHTML = '<div class="empty">Enter parameters and calculate to build the tree.</div>';
         return;
     }
 
-    // Layout parameters
-    const nodeSize = 56; // px (node box height/width)
-    const hGap = 90;     // horizontal gap between columns
-    const vGap = 65;     // vertical gap between rows (user's preferred)
     const depth = tree.values.length;
     const maxNodes = tree.values[depth - 1].length;
-    const svgWidth = (depth - 1) * hGap + nodeSize * 2;
-    const svgHeight = (maxNodes - 1) * vGap + nodeSize * 2;
+    const width = (depth - 1) * H_GAP + NODE_SIZE * 2;
+    const height = (maxNodes - 1) * V_GAP + NODE_SIZE * 2;
 
-    // Calculate node positions: for each (col, row), compute (x, y)
-    // Center the root node vertically
-    const nodePositions = [];
+    // Node positions. Each column is centered vertically and rows are flipped so
+    // the highest price sits at the top.
+    const pos = [];
     for (let col = 0; col < depth; col++) {
-        nodePositions[col] = [];
+        pos[col] = [];
         const nodesInCol = tree.values[col].length;
-        // Center this column vertically
-        const colTop = (svgHeight - (nodesInCol - 1) * vGap - nodeSize) / 2;
+        const colTop = (height - (nodesInCol - 1) * V_GAP - NODE_SIZE) / 2;
         for (let row = 0; row < nodesInCol; row++) {
-            // Flip the row index: highest price at top
-            const flippedRow = nodesInCol - 1 - row;
-            const x = col * hGap + nodeSize;
-            const y = colTop + flippedRow * vGap;
-            nodePositions[col][row] = { x, y };
+            pos[col][row] = {
+                x: col * H_GAP + NODE_SIZE,
+                y: colTop + (nodesInCol - 1 - row) * V_GAP
+            };
         }
     }
 
-    // SVG for branches
-    let svgLines = '';
+    // Edges to both children: (col+1, row) is the down move, (col+1, row+1) the up move.
+    let edges = '';
     for (let col = 0; col < depth - 1; col++) {
         for (let row = 0; row < tree.values[col].length; row++) {
-            // Each node connects to two children: (col+1, row) and (col+1, row+1)
-            const { x: x1, y: y1 } = nodePositions[col][row];
-            // Left child (down move, which is now lower visually)
-            if (row < nodePositions[col + 1].length) {
-                const { x: x2, y: y2 } = nodePositions[col + 1][row];
-                svgLines += `<line x1="${x1 + nodeSize / 2}" y1="${y1 + nodeSize / 2}" x2="${x2 + nodeSize / 2}" y2="${y2 + nodeSize / 2}" stroke="#b4b4b4" stroke-width="2" />`;
-            }
-            // Right child (up move, which is now higher visually)
-            if (row + 1 < nodePositions[col + 1].length) {
-                const { x: x2, y: y2 } = nodePositions[col + 1][row + 1];
-                svgLines += `<line x1="${x1 + nodeSize / 2}" y1="${y1 + nodeSize / 2}" x2="${x2 + nodeSize / 2}" y2="${y2 + nodeSize / 2}" stroke="#b4b4b4" stroke-width="2" />`;
+            const from = pos[col][row];
+            for (const childRow of [row, row + 1]) {
+                if (childRow < pos[col + 1].length) {
+                    const to = pos[col + 1][childRow];
+                    edges += `<line class="tree-edge" x1="${from.x + NODE_SIZE / 2}" y1="${from.y + NODE_SIZE / 2}" `
+                          + `x2="${to.x + NODE_SIZE / 2}" y2="${to.y + NODE_SIZE / 2}" />`;
+                }
             }
         }
     }
 
-    // Render nodes
-    let nodesHtml = '';
+    // The tree recombines, so a given price always lands at the same y:
+    //   y = height/2 - log(S/S0)/log(u) * (V_GAP/2)
+    const priceToY = (price) => {
+        if (!ctx.S0 || !ctx.upFactor || ctx.upFactor <= 1) return null;
+        const y = height / 2 - (Math.log(price / ctx.S0) / Math.log(ctx.upFactor)) * (V_GAP / 2);
+        return y >= 8 && y <= height - 8 ? y : null;
+    };
+
+    let refLines = '';
+    const addRefLine = (price, kind, label) => {
+        const y = priceToY(price);
+        if (y === null) return;
+        refLines += `<line class="ref-line ${kind}" x1="0" y1="${y}" x2="${width}" y2="${y}" />`
+                  + `<text class="ref-label" x="${width - 4}" y="${y - 5}" text-anchor="end">${label} ${price.toFixed(2)}</text>`;
+    };
+    if (ctx.K !== undefined) addRefLine(ctx.K, 'strike', 'K');
+    if (ctx.barrier !== undefined) addRefLine(ctx.barrier, 'barrier', 'B');
+
+    let nodes = '';
     for (let col = 0; col < depth; col++) {
         for (let row = 0; row < tree.values[col].length; row++) {
-            const { x, y } = nodePositions[col][row];
+            const { x, y } = pos[col][row];
             const value = tree.values[col][row];
-            const nodeClass = col === 0 && row === 0 ? 'tree-node highlight' : 'tree-node';
-            nodesHtml += `<div class="${nodeClass}" style="position:absolute;left:${x}px;top:${y}px;width:${nodeSize}px;height:${nodeSize}px;display:flex;align-items:center;justify-content:center;">${value.toFixed(2)}</div>`;
+            const key = `${col},${row}`;
+
+            const classes = ['tree-node'];
+            if (col === 0 && row === 0) classes.push('root');
+            if (ctx.pastBarrier && ctx.pastBarrier.has(key)) {
+                classes.push('knocked');
+            } else if (ctx.moneyness && ctx.K !== undefined) {
+                classes.push(value >= ctx.K ? 'above-strike' : 'below-strike');
+            }
+            if (ctx.exercise && ctx.exercise.has(key)) classes.push('exercise');
+
+            nodes += `<div class="${classes.join(' ')}" `
+                   + `style="left:${x}px;top:${y}px;width:${NODE_SIZE}px;height:${NODE_SIZE}px;">`
+                   + `${value.toFixed(2)}</div>`;
         }
     }
 
-    // Compose HTML
     container.innerHTML = `
-        <div style="position:relative;width:${svgWidth}px;height:${svgHeight}px;margin:0 auto;">
-            <svg width="${svgWidth}" height="${svgHeight}" style="position:absolute;left:0;top:0;z-index:0;">
-                ${svgLines}
+        <div class="tree-canvas" style="width:${width}px;height:${height}px;">
+            <svg width="${width}" height="${height}" aria-hidden="true">
+                ${edges}
+                ${refLines}
             </svg>
-            <div style="position:absolute;left:0;top:0;z-index:1;">
-                ${nodesHtml}
-            </div>
+            ${nodes}
         </div>
     `;
 }
@@ -361,27 +404,49 @@ function calculateOptionPrice() {
         const optionPrice = optionTree.values[0][0];
         priceDisplay.textContent = `$${optionPrice.toFixed(4)}`;
 
-        // Display trees
-        displayTree(optionPricer.stock_tree, 'stockTree');
-        displayTree(optionTree, 'optionTree');
+        // Shared pricing context so the trees can encode strike, barrier and
+        // early-exercise information onto the nodes.
+        const isBarrier = option instanceof BarrierOption;
+        const pastBarrier = isBarrier
+            ? new Set(optionPricer.findCoordsPastBarrier().map(([d, h]) => `${d},${h}`))
+            : null;
+        const baseCtx = { S0, upFactor: optionPricer.up_factor, K };
+        if (isBarrier) baseCtx.barrier = option.barrier;
 
-        // Display after tree for barrier options if it exists
+        displayTree(optionPricer.stock_tree, 'stockTree', { ...baseCtx, moneyness: true, pastBarrier });
+        displayTree(optionTree, 'optionTree', { ...baseCtx, pastBarrier, exercise: optionTree.exerciseNodes });
+
+        // Knock-in options also expose the "already knocked in" tree they fall back to.
         const afterTreeSection = document.getElementById('afterTreeSection');
         if (optionPricer.after_tree) {
-            displayTree(optionPricer.after_tree, 'afterTree');
-            afterTreeSection.style.display = 'block';
+            displayTree(optionPricer.after_tree, 'afterTree', {
+                ...baseCtx,
+                exercise: optionPricer.after_tree.exerciseNodes
+            });
+            afterTreeSection.hidden = false;
         } else {
-            afterTreeSection.style.display = 'none';
+            afterTreeSection.hidden = true;
+        }
+
+        // Show only the legend entries that apply to this run.
+        for (const el of document.querySelectorAll('.tree-legend .barrier-only')) {
+            el.hidden = !isBarrier;
+        }
+        for (const el of document.querySelectorAll('.tree-legend .american-only')) {
+            el.hidden = style !== 'American';
         }
 
     } catch (error) {
-        priceDisplay.textContent = 'Error';
-        document.getElementById('stockTree').innerHTML = `<div class="empty">Error: ${error.message}</div>`;
-        document.getElementById('optionTree').innerHTML = `<div class="empty">Error: ${error.message}</div>`;
+        priceDisplay.textContent = '—';
+        const message = document.createElement('div');
+        message.className = 'empty';
+        message.textContent = error.message;
+        document.getElementById('stockTree').replaceChildren(message);
+        document.getElementById('optionTree').replaceChildren(message.cloneNode(true));
         console.error('Calculation error:', error);
     } finally {
         // Reset button state
-        calculateBtn.innerHTML = 'Calculate Option Price';
+        calculateBtn.textContent = 'Calculate Option Price';
         calculateBtn.disabled = false;
     }
 }
@@ -393,11 +458,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const barrierParams = document.getElementById('barrierParams');
     
     optionCategory.addEventListener('change', function() {
-        if (this.value === 'barrier') {
-            barrierParams.style.display = 'block';
-        } else {
-            barrierParams.style.display = 'none';
-        }
+        barrierParams.hidden = this.value !== 'barrier';
     });
 
     // Calculate button

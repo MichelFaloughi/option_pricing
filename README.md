@@ -6,8 +6,11 @@ An interactive web application for pricing financial options using the binomial 
 
 - **Vanilla Options**: Price European and American call/put options
 - **Barrier Options**: Support for knock-in and knock-out barrier options
-- **Interactive Visualization**: Real-time display of binomial trees
+- **Annotated Tree Visualization**: Binomial lattices with dashed reference lines at the
+  strike and barrier levels, nodes tinted by moneyness, knocked nodes dimmed, and
+  early-exercise nodes outlined for American options
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
+- **Light and Dark Mode**: Follows the operating system colour scheme
 - **Real-time Calculation**: Instant results as you change parameters
 
 ## Parameters
@@ -78,6 +81,6 @@ This project is open source and available under the MIT License.
 
 ## Acknowledgments
 
-- Built with vanilla JavaScript for maximum compatibility
+- Built with vanilla JavaScript and no runtime dependencies
 - Uses modern CSS Grid and Flexbox for responsive design
 - Inspired by Dr. Ryan Donnelly's Mathematical Finance class at King's College London 

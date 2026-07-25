@@ -4,16 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Option Pricing Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjs@11.8.0/lib/browser/math.min.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>📈 Option Pricing Calculator</h1>
-            <p>Interactive binomial tree option pricing with real-time visualization</p>
+            <h1>Option Pricing Calculator</h1>
+            <p>Binomial tree pricing for vanilla and barrier options</p>
         </header>
 
         <div class="main-content">
@@ -84,7 +84,7 @@
                     </div>
                 </div>
 
-                <div class="parameter-group" id="barrierParams" style="display: none;">
+                <div class="parameter-group" id="barrierParams" hidden>
                     <h3>Barrier Parameters</h3>
                     <div class="input-row">
                         <div class="input-group">
@@ -121,16 +121,25 @@
                 <div class="trees-container">
                     <div class="tree-section">
                         <h3>Stock Price Tree</h3>
+                        <div class="tree-legend">
+                            <span><i class="above"></i>Above strike</span>
+                            <span><i class="below"></i>Below strike</span>
+                            <span class="barrier-only" hidden><i class="knocked"></i>Past barrier</span>
+                        </div>
                         <div class="tree-display" id="stockTree"></div>
                     </div>
-                    
+
                     <div class="tree-section">
                         <h3>Option Price Tree</h3>
+                        <div class="tree-legend">
+                            <span class="american-only" hidden><i class="exercise"></i>Early exercise</span>
+                            <span class="barrier-only" hidden><i class="knocked"></i>Past barrier</span>
+                        </div>
                         <div class="tree-display" id="optionTree"></div>
                     </div>
-                    
-                    <div class="tree-section" id="afterTreeSection" style="display: none;">
-                        <h3>After Tree (Barrier Options)</h3>
+
+                    <div class="tree-section" id="afterTreeSection" hidden>
+                        <h3>After Tree (Barrier Knocked In)</h3>
                         <div class="tree-display" id="afterTree"></div>
                     </div>
                 </div>
