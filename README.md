@@ -1,6 +1,8 @@
 # 📈 Option Pricing Calculator
 
-An interactive web application for pricing financial options using the binomial tree method. Built with pure HTML, CSS, and JavaScript for easy deployment on GitHub Pages.
+An interactive web application for pricing financial options using the binomial tree method, built with pure HTML, CSS, and JavaScript.
+
+**▶ [Try it live](https://michelfaloughi.github.io/option_pricing/)**
 
 ## Features
 
@@ -61,6 +63,15 @@ The application implements the binomial tree method for option pricing:
 - **Risk-neutral Probability**: `q = (e^(rΔt) - d)/(u - d)`
 - **Option Value**: `V = e^(-rΔt) * [q*V_up + (1-q)*V_down]`
 
+## Python Reference Implementation
+
+The `src/` directory contains a standalone Python implementation of the same pricer (stock tree construction, backward induction, and barrier logic split across `StockTree`, `BinomialTree`, `Option`, `BarrierOption`, and `OptionPricer` classes), with pytest tests in `tests/`:
+
+```bash
+pip install numpy pytest
+pytest tests/
+```
+
 ## Performance Notes
 
 - Number of steps (N) is limited to 10 for performance reasons
@@ -77,7 +88,7 @@ Feel free to contribute to this project by:
 
 ## License
 
-This project is open source and available under the MIT License.
+This project is open source and available under the [MIT License](LICENSE).
 
 ## Acknowledgments
 
